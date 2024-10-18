@@ -1,31 +1,46 @@
-name: Generate Terraform Docs
-
-on:
-  # pull_request:
-  #   types: [closed]
-  workflow_dispatch:  # Allows manual triggering of the workflow
-
 jobs:
   generate-docs:
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout the repo
+        uses: actions/checkout@v2
 
-    - name: Install the latest version of terraform-docs
-      run: |
-        latest_version=$(curl --silent "https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest" | grep '"tag_name":' | sed -E 's/."([^"]+)"./\1/')
-        curl -Lo /usr/local/bin/terraform-docs https://github.com/terraform-docs/terraform-docs/releases/download/${latest_version}/terraform-docs-${latest_version}-linux-amd64
-        chmod +x /usr/local/bin/terraform-docs
+      - name: Set up variables for OS and Architecture
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            os="linux"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            os="darwin"
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            os="windows"
+          fi
 
-    - name: Generate Terraform Docs
-      run: |
-        terraform-docs markdown . > README.md
+          arch=$(uname -m)
+          if [[ "$arch" == "x86_64" ]]; then
+            arch="amd64"
+          elif [[ "$arch" == "aarch64" ]]; then
+            arch="arm64"
+          fi
 
-    - name: Commit changes
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "GitHub Actions"
-        git add README.md
-        git commit -m "Update Terraform Docs"
-        git push
+          echo "OS: $os"
+          echo "Architecture: $arch"
+
+          echo "os=$os" >> $GITHUB_ENV
+          echo "arch=$arch" >> $GITHUB_ENV
+
+      - name: Install terraform-docs
+        run: |
+          version=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | jq -r .tag_name)
+          curl -Lo /usr/local/bin/terraform-docs https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-$os-$arch
+          chmod +x /usr/local/bin/terraform-docs
+
+      - name: Generate Terraform Docs
+        run: terraform-docs markdown . > README.md
+
+      - name: Commit Changes
+        run: |
+          git config --local user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --local user.name "${{ github.actor }}"
+          git add README.md
+          git commit -m "Update Terraform Docs"
+          git push
