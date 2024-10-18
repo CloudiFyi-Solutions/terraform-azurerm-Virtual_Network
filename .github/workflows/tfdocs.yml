@@ -9,42 +9,59 @@ on:
 
 jobs:
   generate-docs:
+    name: Generate Terraform Docs
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the repo
+      - name: Checkout the repository
         uses: actions/checkout@v2
 
-      - name: Set up variables for OS and Architecture
+      - name: Set up OS and architecture
         run: |
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          echo "Setting up OS and architecture"
+
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
             os="linux"
-          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
             os="darwin"
-          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
             os="windows"
           fi
 
-          arch=$(uname -m)
-          if [[ "$arch" == "x86_64" ]]; then
-            arch="amd64"
-          elif [[ "$arch" == "aarch64" ]]; then
-            arch="arm64"
+          architecture=$(uname -m)
+
+          if [[ "$architecture" == "x86_64" ]]; then
+            architecture="amd64"
+          elif [[ "$architecture" == "aarch64" ]]; then
+            architecture="arm64"
           fi
 
           echo "OS: $os"
-          echo "Architecture: $arch"
+          echo "Architecture: $architecture"
 
           echo "os=$os" >> $GITHUB_ENV
-          echo "arch=$arch" >> $GITHUB_ENV
+          echo "architecture=$architecture" >> $GITHUB_ENV
 
-      - name: Install terraform-docs
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Download terraform-docs
         run: |
           version=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | jq -r .tag_name)
-          curl -Lo /usr/local/bin/terraform-docs https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-$os-$arch
+          echo "Version of terraform-docs: $version"
+          curl -Lo /usr/local/bin/terraform-docs https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-${os}-${architecture}
           chmod +x /usr/local/bin/terraform-docs
 
+      - name: Verify terraform-docs installation
+        run: |
+          echo "Verifying the terraform-docs installation"
+          ls -l /usr/local/bin/terraform-docs
+          file /usr/local/bin/terraform-docs
+          cat /usr/local/bin/terraform-docs  # Inspect file contents
+          /usr/local/bin/terraform-docs --version  # Ensure it runs
+
       - name: Generate Terraform Docs
-        run: terraform-docs markdown . > README.md
+        run: |
+          /usr/local/bin/terraform-docs markdown . > README.md
 
       - name: Commit Changes
         run: |
