@@ -14,46 +14,25 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v2
 
-      - name: Set up OS and architecture
-        run: |
-          echo "Setting up OS and architecture"
-
-          if [[ "${{ runner.os }}" == "Linux" ]]; then
-            os="linux"
-          elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            os="darwin"
-          elif [[ "${{ runner.os }}" == "Windows" ]]; then
-            os="windows"
-          fi
-
-          architecture=$(uname -m)
-
-          if [[ "$architecture" == "x86_64" ]]; then
-            architecture="amd64"
-          elif [[ "$architecture" == "aarch64" ]]; then
-            architecture="arm64"
-          fi
-
-          echo "OS: $os"
-          echo "Architecture: $architecture"
-
-          echo "os=$os" >> $GITHUB_ENV
-          echo "architecture=$architecture" >> $GITHUB_ENV
-
       - name: Install jq
         run: sudo apt-get install -y jq
 
       - name: Download and Install terraform-docs
         run: |
-          version="v0.19.0"  # Hardcoding version for now
-          echo "Version of terraform-docs: $version"
+          echo "Fetching the latest version of terraform-docs"
 
-          # Construct the download URL
-          download_url="https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-${os}-amd64.tar.gz"
+          # Fetch the latest version number dynamically
+          version=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | jq -r .tag_name)
+          echo "Latest version of terraform-docs: $version"
+
+          # Construct the download URL for terraform-docs tar.gz
+          download_url="https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-linux-amd64.tar.gz"
           echo "Download URL: $download_url"
 
-          # Download, extract, and install terraform-docs
+          # Download the terraform-docs tar.gz file
           curl -Lo ./terraform-docs.tar.gz "$download_url"
+          
+          # Extract and install terraform-docs
           tar -xzf terraform-docs.tar.gz
           chmod +x terraform-docs
           sudo mv terraform-docs /usr/local/bin/terraform-docs
@@ -63,11 +42,11 @@ jobs:
           echo "Verifying the terraform-docs installation"
           ls -l /usr/local/bin/terraform-docs
           file /usr/local/bin/terraform-docs
-          sudo /usr/local/bin/terraform-docs --version  # Ensure it runs
+          /usr/local/bin/terraform-docs --version  # Ensure it runs
 
       - name: Generate Terraform Docs
         run: |
-          sudo /usr/local/bin/terraform-docs markdown . > README.md
+          /usr/local/bin/terraform-docs markdown . > README.md
 
       - name: Commit Changes
         run: |
@@ -75,4 +54,10 @@ jobs:
           git config --local user.name "${{ github.actor }}"
           git add README.md
           git commit -m "Update Terraform Docs"
-          git push
+
+      - name: Push changes to GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin main
