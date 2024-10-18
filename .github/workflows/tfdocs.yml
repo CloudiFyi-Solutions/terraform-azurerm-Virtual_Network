@@ -1,11 +1,3 @@
-##Here is the file for github actions
-name: Generate Terraform Docs
-
-on:
-  # pull_request:
-  #   types: [closed]
-  workflow_dispatch:  # Allows manual triggering of the workflow
-
 jobs:
   generate-docs:
     name: Generate Terraform Docs
@@ -18,7 +10,6 @@ jobs:
         run: |
           echo "Setting up OS and architecture"
 
-          # Detect the OS from the GitHub runner environment
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             os="linux"
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
@@ -27,10 +18,8 @@ jobs:
             os="windows"
           fi
 
-          # Capture architecture using uname -m
           architecture=$(uname -m)
 
-          # Normalize architecture names for terraform-docs
           if [[ "$architecture" == "x86_64" ]]; then
             architecture="amd64"
           elif [[ "$architecture" == "aarch64" ]]; then
@@ -51,12 +40,14 @@ jobs:
           version=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | jq -r .tag_name)
           echo "Version of terraform-docs: $version"
 
-          # Dynamically construct the download URL based on OS and architecture
           download_url="https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-${os}-${architecture}"
           echo "Download URL: $download_url"
 
-          # Download the appropriate terraform-docs binary
           curl -Lo /usr/local/bin/terraform-docs "$download_url"
+
+          # Inspect the downloaded file
+          echo "File contents:"
+          cat /usr/local/bin/terraform-docs
           chmod +x /usr/local/bin/terraform-docs
 
       - name: Verify terraform-docs installation
@@ -69,11 +60,3 @@ jobs:
       - name: Generate Terraform Docs
         run: |
           /usr/local/bin/terraform-docs markdown . > README.md
-
-      - name: Commit Changes
-        run: |
-          git config --local user.email "${{ github.actor }}@users.noreply.github.com"
-          git config --local user.name "${{ github.actor }}"
-          git add README.md
-          git commit -m "Update Terraform Docs"
-          git push
