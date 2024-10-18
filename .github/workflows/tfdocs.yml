@@ -49,7 +49,8 @@ jobs:
           echo "Version of terraform-docs: $version"
 
           # Dynamically construct the download URL based on OS and architecture
-          download_url="https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-${os}-${architecture}"
+          download_url="https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-${architecture}-${os}"
+          download_url=""
           echo "Download URL: $download_url"
 
           # Download the appropriate terraform-docs binary
