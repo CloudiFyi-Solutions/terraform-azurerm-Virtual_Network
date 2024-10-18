@@ -43,21 +43,20 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-      - name: Download terraform-docs
+      - name: Download and Install terraform-docs
         run: |
-          version=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | jq -r .tag_name)
+          version="v0.19.0"  # Hardcoding version for now
           echo "Version of terraform-docs: $version"
 
-          # Dynamically construct the download URL based on OS and architecture
-          download_url="https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-${architecture}-${os}"
-          download_url=""
+          # Construct the download URL
+          download_url="https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-${os}-amd64.tar.gz"
           echo "Download URL: $download_url"
 
-          # Download the appropriate terraform-docs binary
-          sudo curl -Lo /usr/local/bin/terraform-docs "$download_url"
-
-          # Ensure the binary is executable
-          sudo chmod +x /usr/local/bin/terraform-docs
+          # Download, extract, and install terraform-docs
+          curl -Lo ./terraform-docs.tar.gz "$download_url"
+          tar -xzf terraform-docs.tar.gz
+          chmod +x terraform-docs
+          sudo mv terraform-docs /usr/local/bin/terraform-docs
 
       - name: Verify terraform-docs installation
         run: |
