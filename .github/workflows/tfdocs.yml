@@ -48,15 +48,16 @@ jobs:
           version=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | jq -r .tag_name)
           echo "Version of terraform-docs: $version"
 
+          # Dynamically construct the download URL based on OS and architecture
           download_url="https://github.com/terraform-docs/terraform-docs/releases/download/${version}/terraform-docs-${version}-${os}-${architecture}"
           echo "Download URL: $download_url"
 
+          # Download the appropriate terraform-docs binary
           curl -Lo /usr/local/bin/terraform-docs "$download_url"
 
-          # Inspect the downloaded file
-          echo "File contents:"
-          cat /usr/local/bin/terraform-docs
-          chmod +x /usr/local/bin/terraform-docs
+          # Debug the contents of the downloaded file
+          echo "Contents of the downloaded terraform-docs file:"
+          cat /usr/local/bin/terraform-docs  # Print contents of the downloaded file
 
       - name: Verify terraform-docs installation
         run: |
