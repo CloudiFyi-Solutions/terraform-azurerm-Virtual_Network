@@ -1,4 +1,11 @@
 ##Here is the file for github actions
+name: Generate Terraform Docs
+
+on:
+  # pull_request:
+  #   types: [closed]
+  workflow_dispatch:  # Allows manual triggering of the workflow
+
 
 jobs:
   generate-docs:
