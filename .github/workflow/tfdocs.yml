@@ -1,0 +1,31 @@
+name: Generate Terraform Docs
+
+on:
+  # pull_request:
+  #   types: [closed]
+  workflow_dispatch:  # Allows manual triggering of the workflow
+
+jobs:
+  generate-docs:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install the latest version of terraform-docs
+      run: |
+        latest_version=$(curl --silent "https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest" | grep '"tag_name":' | sed -E 's/."([^"]+)"./\1/')
+        curl -Lo /usr/local/bin/terraform-docs https://github.com/terraform-docs/terraform-docs/releases/download/${latest_version}/terraform-docs-${latest_version}-linux-amd64
+        chmod +x /usr/local/bin/terraform-docs
+
+    - name: Generate Terraform Docs
+      run: |
+        terraform-docs markdown . > README.md
+
+    - name: Commit changes
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "GitHub Actions"
+        git add README.md
+        git commit -m "Update Terraform Docs"
+        git push
