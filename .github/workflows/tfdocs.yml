@@ -53,19 +53,26 @@ jobs:
           echo "Download URL: $download_url"
 
           # Download the appropriate terraform-docs binary
-          curl -Lo /usr/local/bin/terraform-docs "$download_url"
+          sudo curl -Lo /usr/local/bin/terraform-docs "$download_url"
 
-          # Debug the contents of the downloaded file
-          echo "Contents of the downloaded terraform-docs file:"
-          cat /usr/local/bin/terraform-docs  # Print contents of the downloaded file
+          # Ensure the binary is executable
+          sudo chmod +x /usr/local/bin/terraform-docs
 
       - name: Verify terraform-docs installation
         run: |
           echo "Verifying the terraform-docs installation"
           ls -l /usr/local/bin/terraform-docs
           file /usr/local/bin/terraform-docs
-          /usr/local/bin/terraform-docs --version  # Ensure it runs
+          sudo /usr/local/bin/terraform-docs --version  # Ensure it runs
 
       - name: Generate Terraform Docs
         run: |
-          /usr/local/bin/terraform-docs markdown . > README.md
+          sudo /usr/local/bin/terraform-docs markdown . > README.md
+
+      - name: Commit Changes
+        run: |
+          git config --local user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --local user.name "${{ github.actor }}"
+          git add README.md
+          git commit -m "Update Terraform Docs"
+          git push
