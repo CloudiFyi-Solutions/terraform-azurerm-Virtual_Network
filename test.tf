@@ -24,7 +24,7 @@ resource "azurerm_role_assignment" "snowflake_spn_dns_contributor" {
 }
 
 
-private_dns_zone_ids = output.snowflake_private_dns_zone_ids
+private_dns_zone_ids = { for k, v in data.azurerm_private_dns_zone.snowflake_dns_zones : k => v.id }
 
 variable "private_dns_zone_ids" {
   description = "Private DNS Zone IDs for Snowflake"
