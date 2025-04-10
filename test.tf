@@ -1,13 +1,14 @@
 # Fetch the Snowflake Private DNS Zones dynamically
 data "azurerm_private_dns_zone" "snowflake_dns_zones" {
-  for_each = toset([
-    "privatelink.snowflake.app|az3-snowflake-centralus-prd-rg",
-    "privatelink.snowflake.app|az3-snowflake-eastus2-prd-rg",
-    "privatelink.snowflake.app|az3-snowflake-centralus-npe-rg",
-    "privatelink.snowflake.app|az3-snowflake-eastus2-npe-rg"
-  ])
-  name                = split("|", each.key)[0]
-  resource_group_name = split("|", each.key)[1]
+  for_each = {
+    centralus-prd  = { name = "privatelink.snowflake.app", resource_group = "az3-snowflake-centralus-prd-rg" }
+    eastus2-prd    = { name = "privatelink.snowflake.app", resource_group = "az3-snowflake-eastus2-prd-rg" }
+    centralus-npe  = { name = "privatelink.snowflake.app", resource_group = "az3-snowflake-centralus-npe-rg" }
+    eastus2-npe    = { name = "privatelink.snowflake.app", resource_group = "az3-snowflake-eastus2-npe-rg" }
+  }
+  
+  name                = each.value.name
+  resource_group_name = each.value.resource_group
 }
 
 # 👇 ADD THIS OUTPUT
