@@ -1,34 +1,28 @@
-# Fetch the Snowflake Private DNS Zones dynamically
-data "azurerm_private_dns_zone" "snowflake_dns_zones" {
-  for_each = {
-    centralus-prd  = { name = "privatelink.snowflake.app", resource_group = "az3-snowflake-centralus-prd-rg" }
-    eastus2-prd    = { name = "privatelink.snowflake.app", resource_group = "az3-snowflake-eastus2-prd-rg" }
-    centralus-npe  = { name = "privatelink.snowflake.app", resource_group = "az3-snowflake-centralus-npe-rg" }
-    eastus2-npe    = { name = "privatelink.snowflake.app", resource_group = "az3-snowflake-eastus2-npe-rg" }
-  }
-  
-  name                = each.value.name
-  resource_group_name = each.value.resource_group
+# Fetch the Snowflake Resource Groups dynamically
+data "azurerm_resource_group" "snowflake_resource_groups" {
+  for_each = toset([
+    "az3-snowflake-centralus-prd-rg",
+    "az3-snowflake-eastus2-prd-rg",
+    "az3-snowflake-centralus-npe-rg",
+    "az3-snowflake-eastus2-npe-rg"
+  ])
+  name = each.key
 }
 
-# 👇 ADD THIS OUTPUT
-output "snowflake_private_dns_zone_ids" {
-  value = { for k, v in data.azurerm_private_dns_zone.snowflake_dns_zones : k => v.id }
+  # 👇 NEW: Pass the Resource Group IDs
+  snowflake_resource_group_ids = { for k, v in data.azurerm_resource_group.snowflake_resource_groups : k => v.id }
 }
 
-# Assign Contributor Role to Snowflake SPN for all Private DNS Zones
-resource "azurerm_role_assignment" "snowflake_spn_dns_contributor" {
-  for_each             = var.private_dns_zone_ids
+# Assign "Private DNS Zone Contributor" role to SPNs at Snowflake Resource Group level
+resource "azurerm_role_assignment" "snowflake_spn_private_dns_contributor" {
+  for_each             = var.snowflake_resource_group_ids
   scope                = each.value
-  role_definition_name = "Contributor"
+  role_definition_name = "Private DNS Zone Contributor"
   principal_id         = data.azurerm_service_principal.ss-sp.object_id
 }
 
-
-private_dns_zone_ids = { for k, v in data.azurerm_private_dns_zone.snowflake_dns_zones : k => v.id }
-
-variable "private_dns_zone_ids" {
-  description = "Private DNS Zone IDs for Snowflake"
+variable "snowflake_resource_group_ids" {
+  description = "Snowflake Resource Group IDs for assigning Private DNS Zone Contributor Role"
   type        = map(string)
   default     = {}
 }
